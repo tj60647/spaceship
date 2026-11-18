@@ -112,7 +112,7 @@ export function createLab(views: ReturnType<typeof createViews>) {
       signedIn = !!session.user
       document.querySelector("#live-hint")!.textContent = signedIn
         ? "Run the current inputs, then compare the result with your prediction."
-        : "Sign in to run your edited inputs. Live calls use the shared allowance."
+        : "Sign in to run your edited inputs. Live calls use the shared spending limit."
       updateControls()
       if (!signedIn) {
         results.replaceChildren()

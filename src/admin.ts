@@ -13,7 +13,12 @@ async function refresh() {
   ;(settings.elements.namedItem("budget") as HTMLInputElement).value = String(data.settings.budget)
   ;(settings.elements.namedItem("paused") as HTMLInputElement).checked = data.settings.paused
   document.querySelector("#usage")!.textContent =
-    `$${data.usage.cost.toFixed(4)} used/reserved · ${data.usage.calls} calls · ${data.usage.estimated} pending or estimated`
+    `$${Number(data.settings.budget).toFixed(2)} total limit · $${data.usage.cost.toFixed(4)} used/reserved · $${Math.max(0, Number(data.settings.budget) - data.usage.cost).toFixed(4)} remaining · ${data.usage.calls} calls · ${data.usage.estimated} pending or estimated`
+  document.querySelector("#spending-state")!.textContent = data.settings.paused
+    ? "Live calls are paused for everyone. Uncheck Pause live calls and save to resume."
+    : Number(data.settings.budget) <= data.usage.cost
+      ? "The shared spending limit has been reached. Raise the total limit and save to allow more calls."
+      : "Live calls are enabled within the remaining shared limit. Each request must fit within it."
   document.querySelector("#members")!.replaceChildren(
     ...data.roster.map((member) => {
       const tr = document.createElement("tr")
@@ -58,6 +63,7 @@ await bindCrew(async (session) => {
     document.querySelector("#members")!.replaceChildren()
     document.querySelector("#activity")!.replaceChildren()
     document.querySelector("#usage")!.textContent = ""
+    document.querySelector("#spending-state")!.textContent = ""
     settings.reset()
   }
   if (owner) await refresh()
@@ -81,7 +87,7 @@ for (const id of ["settings", "roster"]) {
           }
     try {
       await api("admin", body)
-      status.textContent = "saved"
+      status.textContent = id === "settings" ? "Shared spending limit saved for everyone." : "Roster saved."
       if (id === "roster") form.reset()
       await refresh()
     } catch (error) {

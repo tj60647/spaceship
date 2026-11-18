@@ -22,18 +22,29 @@
         <section class="panel">
           <div class="panel-bar"><h2>01 / controls</h2></div>
           <div class="panel-body">
-            <h2>demo allowance</h2>
-            <output id="usage"></output>
+            <h2>Shared demo spending limit</h2>
+            <p>Shared by everyone, including the owner. Covers text generation and decision-model calls; signing in does not create a personal balance.</p>
+            <p><output id="usage" aria-live="polite"></output></p>
+            <p><output id="spending-state" aria-live="polite"></output></p>
             <form id="settings">
-              <label>Total lifetime model allowance · USD<input name="budget" type="number" min="0" max="100" step="0.01" required /></label
+              <label>Total spending limit · USD<input name="budget" type="number" min="0" max="100" step="0.01" required /></label
               ><label
-                ><span><input name="paused" type="checkbox" /> pause live access</span></label
-              ><button>save allowance</button>
+                ><span><input name="paused" type="checkbox" /> Pause live calls for everyone</span></label
+              ><button>Save spending limit</button>
             </form>
-            <p class="muted">
-              A $0 allowance disables paid calls. Used/reserved includes conservative estimates where a provider did not report cost. This is an application
-              limit; also set a provider-side key limit.
-            </p>
+            <p class="muted">Set the total cap, not an amount to add. A $10 limit with $2 used/reserved leaves $8 shared.</p>
+            <details>
+              <summary>How the spending limit works</summary>
+              <p>
+                Saving does not buy credits or charge the full amount. The owner can raise the limit here (up to $100), but has no bypass. A $0 limit blocks
+                paid calls. The cap does not reset automatically.
+              </p>
+              <p>
+                Used/reserved includes in-flight requests and conservative estimates when a provider did not report cost. OpenRouter credit and provider-side
+                limits still apply.
+              </p>
+              <p>After raising the limit or resuming calls, return to the flight deck and choose Retry / new story.</p>
+            </details>
             <hr />
             <h2>invite participants</h2>
             <form id="roster">

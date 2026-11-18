@@ -48,7 +48,8 @@ try {
       })
     if (name === "generate") {
       calls++
-      if (blocked) return r.fulfill({ status: 402, json: { error: "The demo allowance is exhausted. Ask the owner to raise it." } })
+      if (blocked)
+        return r.fulfill({ status: 402, json: { error: "This request would exceed the shared demo spending limit. The owner can raise it in Admin." } })
       return r.fulfill({
         contentType: "text/event-stream",
         body:
@@ -98,11 +99,12 @@ try {
   await page.mouse.move(900, 500, { steps: 8 })
   await page.mouse.up()
   await page.waitForFunction(() => document.querySelector("#text").textContent.includes("astronaut"))
+  await page.goto("about:blank")
   blocked = true
   before = calls
-  await page.reload()
+  await page.goto(root)
   await page.locator("#model-error").waitFor()
-  assert.match(await page.locator("#model-error").innerText(), /allowance is exhausted/)
+  assert.match(await page.locator("#model-error").innerText(), /shared demo spending limit/)
   await page.waitForTimeout(1800)
   assert.equal(calls, before + 1)
   assert(await page.locator("#flight-admin").isVisible())
