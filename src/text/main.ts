@@ -1,4 +1,4 @@
-import { authorizedLive } from "../llm/connection.ts"
+import { flightMode, showFailure } from "../llm/connection.ts"
 import { layoutNextLine, prepareWithSegments, type PreparedTextWithSegments } from "@chenglou/pretext"
 import "@fontsource-variable/jetbrains-mono/wght.css"
 import { $ } from "../dom.ts"
@@ -67,7 +67,9 @@ await document.fonts.load(style.font)
 const measure = document.createElement("canvas").getContext("2d")!
 measure.font = style.font
 
-const isLive = await authorizedLive()
+const mode = await flightMode()
+const isLive = mode.live
+let generationBlocked = !!mode.error
 const stream = createTextStream(isLive ? liveSource : simulatedSource, render)
 const rail = createLeftRail(railElement)
 const connections = createConnections({ source: isLive ? liveInfluence : simulatedInfluence, onChange: refreshRail })
@@ -122,10 +124,13 @@ let didHold = false
 /** The previous drag point, for how fast the knob moves. */
 let lastDrag: { point: Point; at: number } | undefined
 
-bindModeToggle(modeToggle, $<HTMLDialogElement>("#live-keys"), isLive)
+bindModeToggle(modeToggle, $<HTMLDialogElement>("#live-keys"), mode)
 addEventListener("model-error", (event) => {
+  generationBlocked = true
+  $("#flight-retry").hidden = false
+  $("#flight-state").textContent = "Live generation stopped. Check the message below, then retry."
   const output = $("#model-error")
-  output.textContent = (event as CustomEvent<string>).detail
+  output.textContent = `Live request stopped: ${(event as CustomEvent<string>).detail} Use Retry after resolving the issue. No simulated text has been substituted.`
   output.hidden = false
 })
 startSound()
@@ -289,10 +294,13 @@ function restartDwell() {
  * and the continuation is what the reader waits for, so it is always asked first.
  */
 function afterStreaming(request: () => void) {
-  stream.streaming().then(request)
+  stream.streaming().then(() => {
+    if (!generationBlocked) request()
+  })
 }
 
 function regenerateFuture() {
+  if (generationBlocked) return
   isFutureStale = false
   restCount = shownCount ?? 0
   stream.regenerate(shownCount ?? 0, "steering changed", steering())
@@ -314,12 +322,16 @@ function scheduleTopUp() {
 }
 
 function topUp() {
+  if (generationBlocked) return
   if (isRegenerationHeld || stream.activity().isGenerating || performance.now() < retryAt) return
   const words = countWords(stream.text)
   if (words - (shownCount ?? 0) >= BUFFER_WORDS) return
   stream.generate("buffer low", steering()).then(
     (outcome) => outcome === "done" && settleTopUp(words),
-    (error) => (console.error(error), settleTopUp(words)),
+    (error) => {
+      if (isLive) showFailure((error as Error).message)
+      else settleTopUp(words)
+    },
   )
 }
 

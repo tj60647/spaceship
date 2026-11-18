@@ -876,9 +876,50 @@
         display: block;
         margin-block: 12px;
       }
+      #flight-bar {
+        position: sticky;
+        top: 0;
+        z-index: 101;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--ink-4);
+        background: var(--bg);
+        line-height: 1.6;
+      }
+      #flight-bar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      #flight-bar button,
+      #flight-bar a {
+        font: inherit;
+        color: var(--ink);
+      }
+      #flight-bar button {
+        background: var(--bg);
+        border: 1px solid var(--ink-3);
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      #flight-bar [hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
+    <header id="flight-bar">
+      <output id="flight-state" aria-live="polite">Checking access…</output>
+      <nav aria-label="Generation controls">
+        <button id="flight-action" type="button">Models / account</button>
+        <button id="flight-retry" type="button" hidden>Retry / new story</button>
+        <a id="flight-admin" href="admin/" hidden>Manage allowance</a>
+      </nav>
+    </header>
     <div id="rail" aria-hidden="true"></div>
     <div id="text"></div>
     <svg id="links" aria-hidden="true">
@@ -899,7 +940,7 @@
     </template>
     <div id="cursor" aria-hidden="true"></div>
     <footer id="tray">
-      <button id="mode-toggle" type="button" aria-pressed="false" aria-label="flight mode">mode<b>sim</b></button>
+      <button id="mode-toggle" type="button" aria-pressed="false" aria-label="Text generation mode and account">text<b>simulator</b></button>
       <output id="status" aria-live="off"></output>
       <button id="sound-toggle" type="button" aria-pressed="true" aria-label="sound">♪<b>on</b></button>
       <a id="extra-link" href="extra/style-1.html">extra</a>
@@ -908,7 +949,7 @@
     </footer>
     <dialog id="live-keys" aria-labelledby="live-keys-title" aria-describedby="live-keys-note" closedby="closerequest">
       <form autocomplete="off">
-        <h2 id="live-keys-title">crew access / models</h2>
+        <h2 id="live-keys-title">Text generation / account</h2>
         <p id="live-keys-note">
           Spaceship IDE by <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a>. Classroom adaptation hosted by A Rough Idea.
         </p>
@@ -928,12 +969,17 @@
             >decisions
             <select name="decision"></select
           ></label>
-          <p>Live text is sent to OpenRouter and the selected providers. Background generation and scoring use the demo allowance.</p>
+          <p>
+            Signing in starts live text generation. Text is sent to OpenRouter and the selected providers; background generation and scoring use the shared
+            allowance. Choosing the simulator stops live calls after the page reloads.
+          </p>
           <p><a href="lab/">decision lab</a> · <a data-admin href="admin/" hidden>admin</a></p>
           <button value="logout">sign out</button>
-          <button value="live">launch</button>
+          <button value="live">Use live generation</button>
         </div>
-        <p class="actions"><button type="button" command="close" commandfor="live-keys">close</button><button value="sim">simulator / stop live</button></p>
+        <p class="actions">
+          <button type="button" command="close" commandfor="live-keys">close</button><button value="sim">Use simulator (no model calls)</button>
+        </p>
       </form>
     </dialog>
     <output id="model-error" hidden aria-live="polite"></output>

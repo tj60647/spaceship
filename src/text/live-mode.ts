@@ -1,12 +1,29 @@
-import { api, selectedModel, type Model, type Session } from "../llm/connection.ts"
-export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElement, isLive: boolean) {
+import { api, selectedModel, type Model, type Session, type FlightMode } from "../llm/connection.ts"
+export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElement, mode: FlightMode) {
+  const isLive = mode.live
+  document.querySelector<HTMLButtonElement>("#flight-retry")!.hidden = !mode.error
+  const summary = document.querySelector<HTMLOutputElement>("#flight-state")!
+  const action = document.querySelector<HTMLButtonElement>("#flight-action")!
+  const admin = document.querySelector<HTMLAnchorElement>("#flight-admin")!
+  admin.hidden = mode.session?.user?.role !== "owner"
+  summary.textContent =
+    mode.error ||
+    (isLive
+      ? `Live generation · ${selectedModel("generation")}. Drag the circle to reveal the story; double-click for attention controls.`
+      : `${mode.session?.user ? "Signed in · simulator selected" : "Simulator · no model connected"}. Placeholder text demonstrates the controls.`)
+  action.textContent = isLive ? "Models / account" : mode.session?.user ? "Use live generation" : "Sign in for live generation"
+  action.addEventListener("click", () => {
+    dialog.showModal()
+    void refresh()
+  })
+  document.querySelector("#flight-retry")!.addEventListener("click", () => location.reload())
   const form = dialog.querySelector("form")!
   const status = dialog.querySelector<HTMLOutputElement>("output")!
   const auth = dialog.querySelector<HTMLElement>("[data-auth]")!
   const models = dialog.querySelector<HTMLElement>("[data-models]")!
   const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement
   toggle.setAttribute("aria-pressed", `${isLive}`)
-  toggle.querySelector("b")!.textContent = isLive ? "flight" : "sim"
+  toggle.querySelector("b")!.textContent = isLive ? "live" : "simulator"
   toggle.addEventListener("click", () => {
     dialog.showModal()
     void refresh()
@@ -22,7 +39,7 @@ export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElem
       }
       auth.hidden = !!session.user
       if (!session.user) {
-        status.textContent = "Sign in with your invited email."
+        status.textContent = "Sign in with your invited email to start live generation automatically."
         return
       }
       const { models: catalogue } = await api<{ models: Model[] }>("config")
@@ -52,7 +69,13 @@ export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElem
     try {
       const result = await api<{ message?: string }>("auth", { action, email: input("email").value, code: input("code").value })
       if (action === "send") status.textContent = result.message || "Check your email."
-      else await refresh()
+      else if (action === "verify") reload(true)
+      else if (action === "logout") {
+        localStorage.removeItem("spaceship.mode")
+        const url = new URL(location.href)
+        url.searchParams.delete("live")
+        location.assign(url)
+      }
     } catch (error) {
       status.textContent = (error as Error).message
     } finally {
@@ -61,8 +84,9 @@ export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElem
   })
   function reload(live: boolean) {
     const url = new URL(location.href)
-    if (live) url.searchParams.set("live", "true")
-    else url.searchParams.delete("live")
+    if (live) localStorage.removeItem("spaceship.mode")
+    else localStorage.setItem("spaceship.mode", "sim")
+    url.searchParams.delete("live")
     location.assign(url)
   }
 }

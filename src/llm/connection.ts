@@ -19,13 +19,20 @@ export function showFailure(message: string) {
 export function recordUsage(value: unknown) {
   dispatchEvent(new CustomEvent("model-usage", { detail: value }))
 }
-export async function authorizedLive() {
+export type FlightMode = { live: boolean; session?: Session; error?: string }
+export async function flightMode(): Promise<FlightMode> {
   localStorage.removeItem("cerebras-api-key")
   localStorage.removeItem("gemini-api-key")
-  if (new URLSearchParams(location.search).get("live") !== "true") return false
+  const requested = new URLSearchParams(location.search).get("live")
+  if (requested === "false") localStorage.setItem("spaceship.mode", "sim")
+  if (requested === "true") localStorage.removeItem("spaceship.mode")
   try {
-    return !!(await api<Session>("session")).user
+    const session = await api<Session>("session")
+    if (localStorage.getItem("spaceship.mode") === "sim") return { live: false, session }
+    if (requested === "true" && !session.user) return { live: true, session, error: "Sign in to resume live generation." }
+    return { live: !!session.user, session }
   } catch {
-    return false
+    if (localStorage.getItem("spaceship.mode") === "sim") return { live: false }
+    return { live: true, error: "Could not check your access. Retry or choose the simulator." }
   }
 }

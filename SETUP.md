@@ -37,3 +37,7 @@ The custom domain and HTTPS were verified on November 16, 2026. Both the pilot a
 This classroom adaptation is maintained at https://github.com/tj60647/spaceship, forked from https://github.com/chuanqisun/spaceship. The original history, MIT license, and Chuanqi Sun�s citation are preserved. Local `origin` points to the adaptation; `upstream` points to the original project.
 
 The current Vercel release was uploaded directly from local source. Pushing to this fork does not by itself establish automatic Vercel deployments; configure a Git connection separately if desired.
+
+## Flight deck modes
+
+Signed-in users start live generation automatically, including when returning from the lab. Live generation and background scoring use the existing shared allowance. The top bar identifies the active mode, model, account controls, and (for owners) allowance management. Signing in on the flight deck starts generation immediately. Choosing the simulator explicitly is remembered in this browser until live generation is selected again. Signing out reloads the simulator. Access-check failures and model errors stop generation with an explanation rather than substituting simulated text. Retry reloads the flight deck; it starts a new story.
