@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spaceship · admin</title>
+    <link rel="stylesheet" href="../src/control.css" />
+  </head>
+  <body>
+    <header class="app-bar">
+      <h1>spaceship / admin</h1>
+      <nav aria-label="Workspace">
+        <a href="../">flight deck</a><a href="../lab/">models</a><a href="../admin/" aria-current="page">admin</a><a href="../report/">report</a>
+      </nav>
+      <div class="account">
+        <output id="access-summary" aria-live="polite">checking access…</output
+        ><button id="sign-in" command="show-modal" commandfor="crew-dialog">sign in</button><button id="logout" hidden>sign out</button>
+      </div>
+    </header>
+    <main class="workspace admin-workspace">
+      <fieldset id="admin" disabled class="admin-grid">
+        <section class="panel">
+          <div class="panel-bar"><h2>01 / controls</h2></div>
+          <div class="panel-body">
+            <h2>demo allowance</h2>
+            <output id="usage"></output>
+            <form id="settings">
+              <label>Total lifetime model allowance · USD<input name="budget" type="number" min="0" max="100" step="0.01" required /></label
+              ><label
+                ><span><input name="paused" type="checkbox" /> pause live access</span></label
+              ><button>save allowance</button>
+            </form>
+            <p class="muted">
+              A $0 allowance disables paid calls. Used/reserved includes conservative estimates where a provider did not report cost. This is an application
+              limit; also set a provider-side key limit.
+            </p>
+            <hr />
+            <h2>invite participants</h2>
+            <form id="roster">
+              <label>Add or reactivate invited emails · one per line<textarea name="emails" rows="4" required></textarea></label><button>save roster</button>
+            </form>
+            <p class="muted">Saving grants access; it sends no email. Participants request their own sign-in code.</p>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-bar">
+            <h2>02 / roster</h2>
+            <output id="admin-status" aria-live="polite">Owner sign-in required.</output>
+          </div>
+          <div class="panel-body">
+            <div class="scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Used/reserved</th>
+                    <th>Access</th>
+                  </tr>
+                </thead>
+                <tbody id="members"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-bar"><h2>03 / activity</h2></div>
+          <div class="panel-body">
+            <h2>recent admin changes</h2>
+            <div id="activity"></div>
+          </div>
+        </section>
+      </fieldset>
+    </main>
+    <footer class="status-bar">
+      <span>Spaceship IDE by <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a> · adaptation by A Rough Idea</span
+      ><a href="../LICENSE.txt">MIT license</a>
+    </footer>
+    <dialog id="crew-dialog" aria-labelledby="crew-title">
+      <h2 id="crew-title">crew access</h2>
+      <output id="access-status" aria-live="polite">Sign in with your invited email.</output>
+      <p>Sign in with your invited email. The simulator is open to everyone.</p>
+      <form id="crew" hidden>
+        <label>email<input name="email" type="email" autocomplete="email" required /></label><button value="send">send code</button
+        ><label>code<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></label><button value="verify">verify</button>
+      </form>
+      <p><button type="button" command="close" commandfor="crew-dialog">close</button></p>
+    </dialog>
+    <script type="module" src="../src/admin.ts"></script>
+  </body>
+</html>

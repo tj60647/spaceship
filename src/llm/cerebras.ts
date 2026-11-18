@@ -1,12 +1,7 @@
-const API_URL = "https://api.cerebras.ai/v1/chat/completions"
-const MODEL = "gpt-oss-120b"
-
-export const KEY_STORAGE = "cerebras-api-key"
-
-export const storedApiKey = () => localStorage.getItem(KEY_STORAGE)?.trim()
+import { selectedModel, showFailure, recordUsage } from "./connection.ts"
+const API_URL = "/api/generate"
 
 export type CompletionRequest = {
-  apiKey: string
   system: string
   user: string
   temperature: number
@@ -14,25 +9,19 @@ export type CompletionRequest = {
   signal: AbortSignal
 }
 
-export async function* streamCompletion({ apiKey, system, user, temperature, maxCompletionTokens, signal }: CompletionRequest) {
+export async function* streamCompletion({ system, user, temperature, maxCompletionTokens, signal }: CompletionRequest) {
   const response = await fetch(API_URL, {
     method: "POST",
     signal,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: MODEL,
-      stream: true,
-      reasoning_effort: "low",
-      temperature,
-      max_completion_tokens: maxCompletionTokens,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: selectedModel("generation"), system, user, temperature, maxCompletionTokens }),
   })
 
-  if (!response.ok) throw new Error(`${response.status} ${await response.text()}`)
+  if (!response.ok) {
+    const message = (await response.json()).error || "Generation failed."
+    showFailure(message)
+    throw new Error(message)
+  }
   if (!response.body) throw new Error("no response body")
 
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
@@ -49,7 +38,13 @@ export async function* streamCompletion({ apiKey, system, user, temperature, max
     for (const line of events) {
       const data = line.startsWith("data:") ? line.slice(5).trim() : ""
       if (!data || data === "[DONE]") continue
-      const content = JSON.parse(data).choices?.[0]?.delta?.content
+      const event = JSON.parse(data)
+      if (event.error) {
+        showFailure(event.error)
+        throw new Error(event.error)
+      }
+      if (event.usage) recordUsage(event)
+      const content = event.choices?.[0]?.delta?.content
       if (content) yield content as string
     }
   }

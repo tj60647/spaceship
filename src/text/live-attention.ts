@@ -1,4 +1,4 @@
-import { storedApiKey, streamCompletion } from "../llm/cerebras.ts"
+import { streamCompletion } from "../llm/cerebras.ts"
 import type { AttentionBox, AttentionSource } from "./attention.ts"
 import { wordSpans } from "./segments.ts"
 
@@ -21,12 +21,9 @@ She lay [still] and
 `.trim()
 
 export const liveAttention: AttentionSource = async function* (text, signal) {
-  const apiKey = storedApiKey()
-  if (!apiKey) throw new Error("save an API key first")
-
   const textWords = wordsOf(text)
   const yielded = new Set<number>()
-  const deltas = streamCompletion({ apiKey, system: SYSTEM_PROMPT, user: text, temperature: 0.3, maxCompletionTokens: 1000, signal })
+  const deltas = streamCompletion({ system: SYSTEM_PROMPT, user: text, temperature: 0.3, maxCompletionTokens: 1000, signal })
 
   for await (const line of linesOf(deltas)) {
     const box = boxFromLine(line, textWords)

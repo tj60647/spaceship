@@ -1,8 +1,5 @@
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/decisions"
-
-export const KEY_STORAGE = "gemini-api-key"
-
-export const storedGeminiKey = () => localStorage.getItem(KEY_STORAGE)?.trim()
+import { selectedModel, showFailure, recordUsage } from "./connection.ts"
+const API_URL = "/api/decide"
 
 export type Resolution = "low" | "medium" | "high" | "ultra_high"
 
@@ -25,10 +22,10 @@ export type Answer =
 export type DecisionResponse = {
   answers: Record<string, Answer>
   usage: {
-    total_input_tokens: number
-    input_tokens_by_modality: { modality: string; tokens: number }[]
-    total_output_tokens: number
-    total_tokens: number
+    input_tokens: number
+    output_tokens: number
+    total_tokens?: number
+    cost?: number
   }
 }
 
@@ -38,17 +35,21 @@ export type DecisionRequest = {
   questions: Record<string, Question>
 }
 
-export async function createDecisions(apiKey: string, request: DecisionRequest, signal: AbortSignal) {
+export async function createDecisions(request: DecisionRequest, signal: AbortSignal) {
   const response = await fetch(API_URL, {
     method: "POST",
     signal,
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify(request),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...request, model: selectedModel("decision") }),
   })
   const body = await response.json()
 
-  if (!response.ok)
-    throw new Error(`HTTP ${response.status} ${body.error?.code ?? ""} ${body.error?.status ?? ""}: ${body.error?.message ?? JSON.stringify(body)}`)
+  if (!response.ok) {
+    const message = body.error || "Decision scoring failed."
+    showFailure(message)
+    throw new Error(message)
+  }
+  recordUsage(body)
 
   return body as DecisionResponse
 }

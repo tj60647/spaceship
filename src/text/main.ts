@@ -1,3 +1,4 @@
+import { authorizedLive } from "../llm/connection.ts"
 import { layoutNextLine, prepareWithSegments, type PreparedTextWithSegments } from "@chenglou/pretext"
 import "@fontsource-variable/jetbrains-mono/wght.css"
 import { $ } from "../dom.ts"
@@ -57,6 +58,8 @@ const statusElement = $("#status")
 const soundToggle = $<HTMLButtonElement>("#sound-toggle")
 const modeToggle = $<HTMLButtonElement>("#mode-toggle")
 const extraLink = $<HTMLAnchorElement>("#extra-link")
+const reportLink = $<HTMLAnchorElement>("#report-link")
+const labLink = $<HTMLAnchorElement>("#lab-link")
 const railElement = $("#rail")
 const style = getComputedStyle(element)
 await document.fonts.load(style.font)
@@ -64,7 +67,7 @@ await document.fonts.load(style.font)
 const measure = document.createElement("canvas").getContext("2d")!
 measure.font = style.font
 
-const isLive = new URLSearchParams(location.search).get("live") === "true"
+const isLive = await authorizedLive()
 const stream = createTextStream(isLive ? liveSource : simulatedSource, render)
 const rail = createLeftRail(railElement)
 const connections = createConnections({ source: isLive ? liveInfluence : simulatedInfluence, onChange: refreshRail })
@@ -120,6 +123,11 @@ let didHold = false
 let lastDrag: { point: Point; at: number } | undefined
 
 bindModeToggle(modeToggle, $<HTMLDialogElement>("#live-keys"), isLive)
+addEventListener("model-error", (event) => {
+  const output = $("#model-error")
+  output.textContent = (event as CustomEvent<string>).detail
+  output.hidden = false
+})
 startSound()
 showSoundToggle()
 soundToggle.addEventListener("click", () => {
@@ -333,7 +341,7 @@ function prepareWords() {
   return prepared.layout
 }
 
-/** What the pointer frames as the hand nears it: the main knob (labelled with its word count), each future knob, each attention box line by line (labelled with its relevance), and the tray's toggles and extra link. */
+/** What the pointer frames as the hand nears it: the main knob (labelled with its word count), each future knob, each attention box line by line (labelled with its relevance), and the tray's toggles and links. */
 function pointerTargets(): PointerTarget[] {
   const leads = attention.leads()
   return [
@@ -350,6 +358,8 @@ function pointerTargets(): PointerTarget[] {
     { rects: [modeToggle.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: modeToggle },
     { rects: [soundToggle.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: soundToggle },
     { rects: [extraLink.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: extraLink },
+    { rects: [reportLink.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: reportLink },
+    { rects: [labLink.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: labLink },
   ]
 }
 

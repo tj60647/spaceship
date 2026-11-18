@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spaceship · decision lab</title>
+    <link rel="stylesheet" href="../src/control.css" />
+  </head>
+  <body>
+    <header class="app-bar">
+      <h1>spaceship / decision lab</h1>
+      <nav aria-label="Workspace">
+        <a href="../">flight deck</a><a href="../lab/" aria-current="page">models</a><a href="../admin/">admin</a><a href="../report/">report</a>
+      </nav>
+      <div class="account">
+        <output id="access-summary" aria-live="polite">checking access…</output
+        ><button id="sign-in" command="show-modal" commandfor="crew-dialog">sign in</button><button id="logout" hidden>sign out</button>
+      </div>
+    </header>
+    <main class="workspace lab-workspace lesson-workspace">
+      <section class="panel editor">
+        <div class="panel-bar">
+          <h2>1 / explore an example</h2>
+          <button id="reset-example" type="button">reset example</button>
+        </div>
+        <div class="panel-body">
+          <p>A decision model judges information against a question. It returns a score or probability that an app can use.</p>
+          <label
+            >Choose a use case<select id="example">
+              <option value="relevance">Spaceship · find a relevant detail</option>
+              <option value="instruction">Writing · check an instruction</option>
+              <option value="support">Inbox · spot a refund request</option>
+            </select></label
+          >
+          <form id="decision-form">
+            <fieldset id="experiment">
+              <label
+                >Information to judge<textarea name="input" rows="6" maxlength="20000" required>
+TIP (the sentence being written now)
+The pilot followed the faint signal to the sealed door.
+
+KEYWORDS
+[1] signal (in "A faint signal pulses behind the sealed door.")</textarea>
+              </label>
+              <label>Question<textarea name="question" rows="2" maxlength="2000" required>How relevant is keyword [1] "signal" to the TIP?</textarea></label>
+              <details class="settings-detail">
+                <summary id="scale-summary">Answer scale · 0 to 3</summary>
+                <label
+                  >Answer format<select name="type">
+                    <option value="score">score on a scale</option>
+                    <option value="noul">yes / no probability</option>
+                  </select></label
+                ><label id="criteria-label"
+                  >Scale · one level per line, lowest first<textarea name="criteria" rows="4">
+Not relevant
+Weak: shares the setting or a passing detail
+Moderate: bears on what the tip is about
+Strong: the tip is about it, or turns on it</textarea>
+                </label>
+                <p class="muted">Scores can fall between levels. A yes/no answer runs from 0 (no) to 1 (yes); it is not verified accuracy.</p>
+              </details>
+              <details id="live-settings" class="settings-detail">
+                <summary>Try a live model</summary>
+                <p id="live-hint" class="muted">Sign in to run your edited inputs. Live calls use the shared allowance.</p>
+                <label
+                  >Model<select name="model" required>
+                    <option value="google/gemini-decision-1">Gemini Decision 1 · Spaceship default</option>
+                  </select></label
+                ><button id="evaluate" type="submit" disabled>run live model</button>
+                <p class="muted">Your text goes to OpenRouter and the selected provider.</p>
+                <details class="settings-detail">
+                  <summary>Flight deck model settings</summary>
+                  <div class="actions">
+                    <button id="use-model" type="button" disabled>use model in Spaceship</button
+                    ><button id="restore-defaults" type="button">restore Spaceship defaults</button>
+                  </div>
+                  <p>
+                    These change this browser’s decision-model selection. Restore selects Gemini Decision 1 and reloads this relevance example. Generation
+                    settings and previous results stay unchanged. Reload the flight deck to apply the choice.
+                  </p>
+                </details>
+              </details>
+            </fieldset>
+          </form>
+        </div>
+        <div class="panel-actions">
+          <button id="show-example" type="button">see example answer →</button><span class="muted">Teaching illustration · free · no sign-in</span>
+        </div>
+      </section>
+      <section class="panel result-panel">
+        <div class="panel-bar">
+          <div class="view-tabs" role="tablist" aria-label="Explore the answer">
+            <button id="tab-answer" role="tab" aria-selected="true" aria-controls="view-answer" data-view="answer">Example answer</button
+            ><button id="tab-results" role="tab" aria-selected="false" aria-controls="view-results" tabindex="-1" data-view="results">Live results</button
+            ><button id="tab-source" role="tab" aria-selected="false" aria-controls="view-source" tabindex="-1" data-view="source">Source code</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <output id="lab-status" aria-live="polite"></output>
+          <div id="view-answer" role="tabpanel" aria-labelledby="tab-answer" tabindex="0">
+            <div id="answer-intro">
+              <h2>What answer would you give?</h2>
+              <p>Read the passage and question on the left. Then select <strong>see example answer</strong>.</p>
+              <p>The example shows how a judgment could become useful in an app. It is a teaching illustration, not a model run.</p>
+            </div>
+            <div id="worked-example" hidden>
+              <p class="eyebrow">Teaching illustration · not a model response</p>
+              <h2 id="worked-value"></h2>
+              <p id="worked-reason"></p>
+              <h3>Change one thing</h3>
+              <p id="example-next"></p>
+              <p class="muted">This explanation uses the preset’s original text, not your edits. To evaluate edits, open “Try a live model” on the left.</p>
+              <button id="show-source" type="button">where is this used in Spaceship? →</button>
+            </div>
+            <details class="settings-detail">
+              <summary>What makes this a decision model?</summary>
+              <p>
+                A text-generation model writes a continuation. A decision model answers a specific question about supplied information in a structured form: a
+                score, label, or probability. The application decides what to do with that answer.
+              </p>
+              <p>
+                For example: measure relevance to highlight a passage, check a writing instruction to flag a draft for review, or suggest an inbox label. A
+                score is a judgment, not a fact. Test ambiguous cases before relying on it.
+              </p>
+            </details>
+          </div>
+          <div id="view-results" role="tabpanel" aria-labelledby="tab-results" tabindex="0" hidden>
+            <div class="result-toolbar">
+              <h2>Live runs · newest first</h2>
+              <button id="clear" type="button">clear results</button>
+            </div>
+            <p class="muted">Keep the text and question fixed when comparing models. Results remain here until you leave.</p>
+            <div id="results" class="result-grid" aria-live="polite"></div>
+            <p id="results-empty" class="muted">No live runs yet. Open “Try a live model” in the left pane to start.</p>
+          </div>
+          <div id="view-source" role="tabpanel" aria-labelledby="tab-source" tabindex="0" hidden>
+            <h2>Where does Spaceship use the model?</h2>
+            <p>
+              This is Chuanqi Sun’s original relevance implementation, pinned to the version this adaptation started from. The teaching passage is new; the
+              question and scale come from this code.
+            </p>
+            <ol class="source-steps">
+              <li>
+                <h3>Choose Gemini Decision 1 and a four-level scale</h3>
+                <p>
+                  <a
+                    href="https://github.com/chuanqisun/spaceship/blob/4ddd4d1061aa5f22113d5dd03462b3b3e5f506a6/src/text/live-relevance.ts#L4"
+                    target="_blank"
+                    rel="noreferrer"
+                    >live-relevance.ts · model and scale ↗</a
+                  >
+                </p>
+                <pre><code>const MODEL = &quot;gemini-decision-1&quot;
+const LEVELS = [
+  &quot;Not relevant&quot;,
+  &quot;Weak: shares the setting or a passing detail&quot;,
+  &quot;Moderate: bears on what the tip is about&quot;,
+  &quot;Strong: the tip is about it, or turns on it&quot;,
+]</code></pre>
+              </li>
+              <li>
+                <h3>Ask a question about each keyword</h3>
+                <p>
+                  <a
+                    href="https://github.com/chuanqisun/spaceship/blob/4ddd4d1061aa5f22113d5dd03462b3b3e5f506a6/src/text/live-relevance.ts#L22"
+                    target="_blank"
+                    rel="noreferrer"
+                    >live-relevance.ts · question construction ↗</a
+                  >
+                </p>
+                <pre><code>    leads.map((lead, i): [string, Question] =&gt; [
+      keyOf(i),
+      { type: &quot;score&quot;, instructions: `How relevant is keyword [${i + 1}] &quot;${lead.keyword}&quot; to the TIP?`, criteria: LEVELS },
+    ]),
+  )
+  const { answers } = await createDecisions(apiKey, { model: MODEL, input, questions }, signal)</code></pre>
+              </li>
+              <li>
+                <h3>Call the model, then use its score</h3>
+                <p>
+                  <a
+                    href="https://github.com/chuanqisun/spaceship/blob/4ddd4d1061aa5f22113d5dd03462b3b3e5f506a6/src/text/live-relevance.ts#L27"
+                    target="_blank"
+                    rel="noreferrer"
+                    >live-relevance.ts · the actual model call ↗</a
+                  >
+                </p>
+                <pre><code>  const { answers } = await createDecisions(apiKey, { model: MODEL, input, questions }, signal)
+
+  for (const index of leads.keys()) {
+    const answer = answers[keyOf(index)]
+    if (answer?.type === &quot;score&quot;) yield { index, relevance: answer.score / (LEVELS.length - 1) }
+  }</code></pre>
+                <p>A score of 3 becomes relevance 1.0; a score of 1.5 becomes 0.5. The app uses this normalized value in its attention-box UI.</p>
+              </li>
+            </ol>
+            <p>
+              <a
+                href="https://github.com/chuanqisun/spaceship/blob/4ddd4d1061aa5f22113d5dd03462b3b3e5f506a6/src/llm/decisions.ts#L45"
+                target="_blank"
+                rel="noreferrer"
+                >Follow createDecisions to the original HTTP request ↗</a
+              >
+            </p>
+            <p>
+              <a
+                href="https://github.com/chuanqisun/spaceship/blob/4ddd4d1061aa5f22113d5dd03462b3b3e5f506a6/src/text/main.ts#L69"
+                target="_blank"
+                rel="noreferrer"
+                >See live relevance connected to the flight deck ↗</a
+              >
+            </p>
+            <details>
+              <summary>What changed in this hosted adaptation?</summary>
+              <p>
+                The original sends requests directly to Google with a browser-held key. This version keeps the scoring logic but routes requests through
+                <code>src/llm/decisions.ts → api/decide.js → server/inference.js</code> to OpenRouter, with server-held credentials and access checks.
+              </p>
+              <p>The lab’s teaching presets live in <code>src/lab/examples.ts</code>. Editing them does not change the flight deck’s questions.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="status-bar">
+      <span>Spaceship IDE by <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a> · adaptation by A Rough Idea</span
+      ><a href="../LICENSE.txt">MIT license</a>
+    </footer>
+    <dialog id="crew-dialog" aria-labelledby="crew-title">
+      <h2 id="crew-title">crew access</h2>
+      <output id="access-status" aria-live="polite">Sign in with your invited email.</output>
+      <p>Sign in with your invited email. The simulator is open to everyone.</p>
+      <form id="crew" hidden>
+        <label>email<input name="email" type="email" autocomplete="email" required /></label><button value="send">send code</button
+        ><label>code<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></label><button value="verify">verify</button>
+      </form>
+      <p><button type="button" command="close" commandfor="crew-dialog">close</button></p>
+    </dialog>
+    <script type="module" src="../src/lab.ts"></script>
+  </body>
+</html>

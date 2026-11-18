@@ -1,4 +1,4 @@
-import { storedApiKey, streamCompletion } from "../llm/cerebras.ts"
+import { streamCompletion } from "../llm/cerebras.ts"
 import { STORY_OPENINGS } from "../story/openings.ts"
 import { STORY_MAX_WORDS, STORY_REQUEST } from "../story/prompt.ts"
 import { strengthLevelOf, valueOf, type Control } from "./dimension.ts"
@@ -44,13 +44,10 @@ function expandToStoryStart(text: string) {
 }
 
 async function* completeStory(prefix: string, steering: Steering, signal: AbortSignal) {
-  const apiKey = storedApiKey()
-  if (!apiKey) throw new Error("save an API key first")
-
   const isSteered = steering.leads.length > 0 || steering.controls.length > 0
   const request = isSteered ? { ...STEERED_REQUEST, user: steeredUserMessage(prefix, steering) } : { ...STORY_REQUEST, user: prefix }
   let head: string | undefined = ""
-  for await (const delta of streamCompletion({ ...request, apiKey, signal })) {
+  for await (const delta of streamCompletion({ ...request, signal })) {
     if (head === undefined) {
       yield delta
       continue

@@ -1,4 +1,4 @@
-import { createDecisions, storedGeminiKey, type Question } from "../llm/decisions.ts"
+import { createDecisions, type Question } from "../llm/decisions.ts"
 import type { RelevanceSource } from "./keyword-relevance.ts"
 
 const MODEL = "gemini-decision-1"
@@ -10,9 +10,6 @@ const LEVELS = [
 ]
 
 export const liveRelevance: RelevanceSource = async function* ({ story, tip, leads }, signal) {
-  const apiKey = storedGeminiKey()
-  if (!apiKey) throw new Error("save a Gemini API key on the decisions page first")
-
   const input = [
     ...(story ? [`STORY SO FAR\n${story}`] : []),
     `TIP (the sentence being written now)\n${tip}`,
@@ -24,7 +21,7 @@ export const liveRelevance: RelevanceSource = async function* ({ story, tip, lea
       { type: "score", instructions: `How relevant is keyword [${i + 1}] "${lead.keyword}" to the TIP?`, criteria: LEVELS },
     ]),
   )
-  const { answers } = await createDecisions(apiKey, { model: MODEL, input, questions }, signal)
+  const { answers } = await createDecisions({ model: MODEL, input, questions }, signal)
 
   for (const index of leads.keys()) {
     const answer = answers[keyOf(index)]

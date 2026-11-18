@@ -604,6 +604,8 @@
       }
       #mode-toggle,
       #sound-toggle,
+      #lab-link,
+      #report-link,
       #extra-link {
         padding: 0 var(--gap);
         border: none;
@@ -641,7 +643,9 @@
           color: var(--hot);
         }
       }
-      #extra-link {
+      #extra-link,
+      #report-link,
+      #lab-link {
         text-decoration: none;
       }
       #sound-toggle[aria-pressed="false"] {
@@ -846,6 +850,32 @@
           color: var(--hot);
         }
       }
+      #model-error {
+        position: fixed;
+        bottom: 28px;
+        left: 16px;
+        max-width: min(60ch, 90vw);
+        background: var(--bg);
+        color: var(--ink);
+        padding: 8px;
+        border: 1px solid var(--ink-3);
+        z-index: 100;
+      }
+      #live-keys input {
+        -webkit-text-security: none;
+      }
+      #live-keys select {
+        max-width: 100%;
+        min-width: 0;
+        font: inherit;
+      }
+      #live-keys [hidden] {
+        display: none;
+      }
+      #live-keys output {
+        display: block;
+        margin-block: 12px;
+      }
     </style>
   </head>
   <body>
@@ -873,48 +903,40 @@
       <output id="status" aria-live="off"></output>
       <button id="sound-toggle" type="button" aria-pressed="true" aria-label="sound">♪<b>on</b></button>
       <a id="extra-link" href="extra/style-1.html">extra</a>
+      <a id="lab-link" href="lab/">models</a>
+      <a id="report-link" href="report/">report</a>
     </footer>
     <dialog id="live-keys" aria-labelledby="live-keys-title" aria-describedby="live-keys-note" closedby="closerequest">
-      <form method="dialog" autocomplete="off">
-        <h2 id="live-keys-title">launch</h2>
-        <p id="live-keys-note">Lift off from the simulator to call the real API with your own keys, kept in this browser's local storage.</p>
-        <label
-          >cerebras
-          <input
-            name="cerebras"
-            type="text"
-            required
-            autocomplete="off"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            data-form-type="other"
-            autofocus
-        /></label>
-        <label
-          >gemini
-          <input
-            name="gemini"
-            type="text"
-            required
-            autocomplete="off"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            data-form-type="other"
-        /></label>
-        <p class="actions">
-          <button type="button" command="close" commandfor="live-keys">abort</button>
-          <button value="live">launch</button>
+      <form autocomplete="off">
+        <h2 id="live-keys-title">crew access / models</h2>
+        <p id="live-keys-note">
+          Spaceship IDE by <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a>. Classroom adaptation hosted by A Rough Idea.
         </p>
+        <output aria-live="polite"></output>
+        <div data-auth hidden>
+          <label>email <input name="email" type="email" autocomplete="email" /></label>
+          <button value="send">send code</button>
+          <label>code <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></label>
+          <button value="verify">verify</button>
+        </div>
+        <div data-models hidden>
+          <label
+            >generation
+            <select name="generation"></select
+          ></label>
+          <label
+            >decisions
+            <select name="decision"></select
+          ></label>
+          <p>Live text is sent to OpenRouter and the selected providers. Background generation and scoring use the demo allowance.</p>
+          <p><a href="lab/">decision lab</a> · <a data-admin href="admin/" hidden>admin</a></p>
+          <button value="logout">sign out</button>
+          <button value="live">launch</button>
+        </div>
+        <p class="actions"><button type="button" command="close" commandfor="live-keys">close</button><button value="sim">simulator / stop live</button></p>
       </form>
     </dialog>
+    <output id="model-error" hidden aria-live="polite"></output>
     <script type="module" src="/src/text/main.ts"></script>
   </body>
 </html>

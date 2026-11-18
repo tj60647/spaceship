@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spaceship · architecture report</title>
+    <link rel="stylesheet" href="../src/control.css" />
+  </head>
+  <body>
+    <header class="app-bar">
+      <h1>spaceship / report</h1>
+      <nav aria-label="Workspace">
+        <a href="../">flight deck</a><a href="../lab/">models</a><a href="../admin/">admin</a><a href="../report/" aria-current="page">report</a>
+      </nav>
+    </header>
+    <main class="workspace report-workspace">
+      <aside class="panel">
+        <div class="panel-bar"><h2>contents</h2></div>
+        <nav class="panel-body contents" aria-label="Report sections">
+          <a href="#report-0">01 / First build</a><a href="#report-1">02 / Request path</a><a href="#report-2">03 / Access and allowance</a
+          ><a href="#report-3">04 / Model connections</a><a href="#report-4">05 / Deferred until we learn from use</a
+          ><a href="#report-5">06 / Style and attribution</a><a href="#report-6">07 / References</a>
+        </nav>
+      </aside>
+      <article class="panel report-document">
+        <div class="panel-bar"><h2>architecture / implementation + roadmap</h2></div>
+        <div class="panel-body">
+          <div class="hero">
+            <span class="tag">classroom build · architecture and roadmap</span>
+            <h1>Spaceship / architecture report</h1>
+            <p class="lead">
+              Spaceship IDE is the work of <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a>. A Rough Idea adapts its access and model
+              connections for classroom exploration. The original concept, flight deck, interaction design, and simulator remain credited to their author.
+            </p>
+            <p><a href="../lab/">decision lab</a> · <a href="../admin/">owner panel</a> · <a href="../LICENSE.txt">original MIT license</a></p>
+          </div>
+          <section id="report-0">
+            <h2>01 / First build</h2>
+            <p>
+              The public simulator needs no account or API key. Invited participants sign in with an emailed WorkOS code. Generation and decisions go through
+              same-origin Vercel Functions; provider credentials remain on the server.
+            </p>
+            <p>
+              The owner can paste email addresses, revoke access, pause live requests, and set a lifetime demo allowance from $0 to $100. The initial allowance
+              is $0. This is a small pilot with one roster, an owner role, and a participant role.
+            </p>
+            <p>
+              The decision lab runs the same context and question against different available decision models, showing structured answers, latency, and reported
+              cost. Results stay in the page for comparison and disappear on navigation.
+            </p>
+            <p>
+              Deployment configuration, email delivery, and provider availability must be verified separately from a successful build. The interface reports
+              when hosted access is not configured.
+            </p>
+          </section>
+          <section id="report-1">
+            <h2>02 / Request path</h2>
+            <div class="route">
+              <div class="node">
+                <strong>Browser</strong><span>Vite / TypeScript<br />Public simulation<br />Model selection</span>
+              </div>
+              <span class="arrow">→</span>
+              <div class="node">
+                <strong>Vercel Functions</strong><span>Session and roster<br />Allowance reservation<br />Request validation</span>
+              </div>
+              <span class="arrow">→</span>
+              <div class="node">
+                <strong>OpenRouter</strong><span>Streaming generation<br />Typed decisions<br />Reported usage</span>
+              </div>
+            </div>
+            <p>
+              WorkOS verifies the email address. Postgres on Neon stores roster membership, hashed revocable sessions, allowance, usage reservations, rate
+              counters, and owner audit events. Server credentials are deployment secrets.
+            </p>
+            <p>
+              Routes: <code>/api/auth</code>, <code>/api/session</code>, <code>/api/config</code>, <code>/api/generate</code>, <code>/api/decide</code>, and
+              <code>/api/admin</code>. The hosted base path is <code>/</code>. Preview deployments should use separate credentials and database branches.
+            </p>
+          </section>
+          <section id="report-2">
+            <h2>03 / Access and allowance</h2>
+            <ol>
+              <li>The owner adds invited emails. Adding an address does not send an email.</li>
+              <li>The participant requests a sign-in code and enters it in the app.</li>
+              <li>The server verifies the identity and checks active roster membership before issuing a 12-hour HttpOnly session.</li>
+              <li>Each paid request rechecks membership and atomically reserves a conservative allowance estimate before contacting the provider.</li>
+              <li>Reported cost settles the reservation once. Missing usage keeps the estimate reserved.</li>
+            </ol>
+            <p>
+              Revocation blocks subsequent requests. It cannot undo work already dispatched. There are per-user request and concurrency limits plus a shared
+              concurrency limit. The owner can pause new requests immediately.
+            </p>
+            <p>
+              The allowance is cumulative, not a recurring monthly reset. Estimates and upstream billing can differ; provider-side limits provide an additional
+              ceiling. Hosting, database, authentication, and provider credit fees are outside the model allowance. Class-scale load testing remains a
+              follow-up.
+            </p>
+          </section>
+          <section id="report-3">
+            <h2>04 / Model connections</h2>
+            <p>
+              Generation and decisions are distinct operations. Generation starts with OpenAI GPT OSS 120B and 20B through OpenRouter. The server discovers text
+              decision models from OpenRouter's current catalogue, limited in this pilot to models with input-token pricing and no output or per-request
+              charges.
+            </p>
+            <p>
+              Decision questions use rubric scores or yes/no probabilities. Every result is validated for the requested answer type and range. An available
+              model may still refuse or lack compatible scoring; failures are shown explicitly. Alpha API and model availability can change.
+            </p>
+            <p>
+              Inputs are sent to OpenRouter and the selected provider. This app does not store prompts or generated text in its database. Model choices are
+              saved in browser localStorage; API keys are not. Legacy browser keys are cleared when the app loads.
+            </p>
+          </section>
+          <section id="report-4">
+            <h2>05 / Deferred until we learn from use</h2>
+            <ul>
+              <li>BYO provider keys, held in memory or a local proxy with explicit connection consent.</li>
+              <li>
+                A local Ollama, LM Studio, or vLLM connection. A cloud Vercel function cannot reach a participant's localhost; a browser-to-loopback connection
+                needs its own origin checks and setup.
+              </li>
+              <li>Workshop dates, faculty groups, facilitator roles, per-person spending caps, roster import previews, and session-specific links.</li>
+              <li>Usage exports, retention controls, and broader operational monitoring.</li>
+            </ul>
+            <p>
+              These are design directions, not features of the first build. The owner panel intentionally stays small until classroom use reveals what is
+              needed.
+            </p>
+          </section>
+          <section id="report-5">
+            <h2>06 / Style and attribution</h2>
+            <p>
+              The flight deck keeps the original compact monospace, black-and-white palette, and orange interaction cues. The report, model lab, and admin panel
+              use the same visual vocabulary with ordinary document layout for reading and forms.
+            </p>
+            <p>
+              <code>extra/</code> is the author's design playground: style studies, pointer experiments, tray prototypes, illustrations, and sound tests. It is
+              not the backend architecture guide.
+            </p>
+            <p>
+              The upstream README, citation, and MIT license remain included. This deployment is a classroom adaptation by A Rough Idea, not a claim of
+              authorship of Spaceship IDE.
+            </p>
+          </section>
+          <section id="report-6">
+            <h2>07 / References</h2>
+            <ul>
+              <li><a href="https://github.com/chuanqisun/spaceship">Spaceship IDE — Chuanqi Sun</a></li>
+              <li><a href="https://workos.com/docs/authkit/magic-auth">WorkOS Magic Auth</a></li>
+              <li><a href="https://openrouter.ai/docs/guides/features/decisions">OpenRouter Decisions API</a></li>
+              <li><a href="https://vercel.com/docs/functions/streaming-functions">Vercel streaming functions</a></li>
+            </ul>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="status-bar">
+      <span>Spaceship IDE by <a href="https://github.com/chuanqisun/spaceship">Chuanqi Sun</a> · adaptation by A Rough Idea</span
+      ><a href="../LICENSE.txt">MIT license</a>
+    </footer>
+  </body>
+</html>

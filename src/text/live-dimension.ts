@@ -1,4 +1,4 @@
-import { storedApiKey, streamCompletion } from "../llm/cerebras.ts"
+import { streamCompletion } from "../llm/cerebras.ts"
 import type { Dimension, DimensionContext, DimensionSource } from "./dimension.ts"
 
 const MENU_SIZE = 5
@@ -44,9 +44,6 @@ mode: dialogue | action | description
 
 /** One call offers the menu: the free catalog axes that matter most here, with the story's characters as the options of `focus`. Axes the model leaves out or garbles are filled in from the catalog. */
 export const liveDimension: DimensionSource = async function* (context, signal) {
-  const apiKey = storedApiKey()
-  if (!apiKey) throw new Error("save an API key first")
-
   const takenNames = context.taken.map(({ name }) => name.toLowerCase())
   const free = CATALOG.filter(({ name }) => !takenNames.includes(name))
   const generic = free.filter((axis) => axis.kind === "scale" || axis.options.length)
@@ -55,7 +52,6 @@ export const liveDimension: DimensionSource = async function* (context, signal) 
 
   const offered: string[] = []
   const deltas = streamCompletion({
-    apiKey,
     system: SYSTEM_PROMPT,
     user: userMessageOf(context, free, size),
     temperature: 0.3,

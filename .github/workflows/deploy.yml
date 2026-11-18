@@ -1,9 +1,6 @@
 name: Deploy static content to Pages
 
 on:
-  push:
-    branches: ["master"]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -35,6 +32,8 @@ jobs:
         with:
           enablement: true
       - name: npm install, build, and test
+        env:
+          VITE_BASE_PATH: /spaceship/
         run: |
           npm install
           npm run build

@@ -31,3 +31,8 @@ token-usage.log
 
 # written by scripts/capture
 .capture
+
+.env*
+!.env.example
+.vercel
+.neon

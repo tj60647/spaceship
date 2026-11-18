@@ -1,0 +1,6 @@
+logs
+*.log
+.env*
+test
+extra/clips
+extra/*.gif

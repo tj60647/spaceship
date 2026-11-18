@@ -1,3 +1,7 @@
+> Classroom adaptation by A Rough Idea. **Spaceship IDE, its concept and original interface are by [Chuanqi Sun](https://github.com/chuanqisun/spaceship).** The original README follows below; its first-person passages are the author's. See [local and hosted setup](SETUP.md), the [architecture report](report/index.html), and the preserved [MIT license](LICENSE).
+
+---
+
 # 🕹️ Spaceship IDE
 
 Steer your ideas in realtime, space pilot style!
